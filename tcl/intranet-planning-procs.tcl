@@ -68,9 +68,9 @@ ad_proc -public im_project_assignment_component {
     -return_url
 } { 
 } {
-    set params [list  [list base_url "/intranet-pmo/"]  [list user_id $user_id] [list project_id $project_id] [list return_url [im_biz_object_url $project_id]]]
+    set params [list  [list base_url "/intranet-planning/"]  [list user_id $user_id] [list project_id $project_id] [list return_url [im_biz_object_url $project_id]]]
     
-    set result [ad_parse_template -params $params "/packages/intranet-pmo/lib/project-assignment"]
+    set result [ad_parse_template -params $params "/packages/intranet-planning/lib/project-assignment"]
     return [string trim $result]
 }
 
