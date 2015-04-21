@@ -37,9 +37,15 @@ DECLARE
 
 	v_item_id		integer;
 BEGIN
-	select	nextval('im_planning_items_seq')
-	into	v_item_id from dual;
-
+	v_item_id := acs_object__new (
+		p_item_id,
+		p_object_type,
+		p_creation_date,
+		p_creation_user,
+		p_creation_ip,
+		p_context_id
+	);
+	
 	-- Create an entry in the im_planning table with the same
 	-- v_item_id from acs_objects.object_id
 	insert into im_planning_items (

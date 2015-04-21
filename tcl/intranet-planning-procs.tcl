@@ -119,7 +119,22 @@ namespace eval planning_item {
             set creation_ip [ns_conn peeraddr]
         }
 
-        set item_id [db_exec_plsql create_new_planning_item ""]
+        set item_id [db_exec_plsql create_new_planning_item "select im_planning_item__new (
+        NULL,
+        'im_planning_item',
+        :creation_date,
+        :creation_user,
+        :creation_ip,
+        :context_id,
+        :item_object_id,
+        :item_type_id,
+        :item_status_id,
+        :item_value,
+        :item_note,
+        :item_project_phase_id,
+        :item_project_member_id,
+        :item_cost_type_id,
+        :item_date)"]
 
         return $item_id
     }

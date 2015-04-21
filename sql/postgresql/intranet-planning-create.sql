@@ -76,10 +76,11 @@ create sequence im_planning_items_seq;
 ---
 create table im_planning_items (
 			-- The (fake) object_id: does not yet reference acs_objects.
-	item_id		integer default nextval('im_planning_items_seq')
+	item_id		integer
 			constraint im_planning_item_id_pk
-			primary key,
-
+			primary key
+			constraint im_planning_item_itm_fk
+			references acs_objects,
 			-- Field to allow attaching the item to a project, user or
 			-- company. So object_id references acs_objects.object_id,
 			-- the supertype of all object types.
@@ -193,8 +194,14 @@ DECLARE
 
 	v_item_id		integer;
 BEGIN
-	select	nextval('im_planning_items_seq')
-	into	v_item_id from dual;
+	v_item_id := acs_object__new (
+		p_item_id,
+		p_object_type,
+		p_creation_date,
+		p_creation_user,
+		p_creation_ip,
+		p_context_id
+	);
 
 	-- Create an entry in the im_planning table with the same
 	-- v_item_id from acs_objects.object_id
@@ -229,7 +236,7 @@ BEGIN
 			select hourly_cost
 			from   im_employees
 			where  employee_id = p_item_project_member_id
-		    )
+			)
 		where item_id = v_item_id;
 	END IF;
 
