@@ -193,6 +193,7 @@ foreach csv_line_fields $values_list_of_lists {
     # find the employee and the project
     if {"" != $employee_id && "" != $project_id} {
         	set current_availability 0
+        	set previous_availability 0
         	set avail ""
         	
         	foreach month $months {
@@ -219,9 +220,17 @@ foreach csv_line_fields $values_list_of_lists {
                 		# Find out if we need to create the relationship
                 		set current_date "01"
                 		append current_date [db_string date "select to_char(now(),'YYMM') from dual"]
+                    set previous_date "01"
+                		append previous_date [db_string date "select to_char(now() - interval '1 month','YYMM') from dual"]
                 		
                 		if {$current_date == $start_date} {
                 		    set current_availability $availability
+                		}
+                		
+                		# Needed to check if the user was assigned in the previous months. 
+                		# Do not remove, otherwise time tracking will be nigh impossible.
+                		if {$previous_date == $start_date} {
+                		    set previous_availability $availability
                 		}
                 		
                 		# Make this an effort
@@ -258,15 +267,17 @@ foreach csv_line_fields $values_list_of_lists {
                 		db_dml update_availability "update im_biz_object_members set percentage = :current_availability where rel_id = :rel_id"
         	    }
         	} else {
-        	    # Remove the relationship
-        	    set rel_id [db_string select_rel "select rel_id from acs_rels where object_id_one = :project_id and object_id_two = :employee_id" -default ""]
-        	    if {$rel_id ne ""} {
-            	    set project_url [export_vars -base "/intranet/projects/view" -url {project_id}]
-            	    set employee_url [export_vars -base "/intranet/users/view" -url {{user_id $employee_id}}]
-            	    set employee_name [im_name_from_id $employee_id]
-            	    set project_name [im_name_from_id $project_id]
-                ns_write "This rel $rel_id for <a href='$project_url'>$project_name</a> for <a href='$employee_url'>$employee_name</a> should be removed<br />"
-        	    }
+            	if {$previous_availability == 0} {
+            	    # Remove the relationship
+            	    set rel_id [db_string select_rel "select rel_id from acs_rels where object_id_one = :project_id and object_id_two = :employee_id" -default ""]
+            	    if {$rel_id ne ""} {
+                	    set project_url [export_vars -base "/intranet/projects/view" -url {project_id}]
+                	    set employee_url [export_vars -base "/intranet/users/view" -url {{user_id $employee_id}}]
+                	    set employee_name [im_name_from_id $employee_id]
+                	    set project_name [im_name_from_id $project_id]
+                    ns_write "This rel $rel_id for <a href='$project_url'>$project_name</a> for <a href='$employee_url'>$employee_name</a> should be removed<br />"
+            	    }
+            }
         	}
     } else {
         	ns_write "Can't add personnel $personnel_number for Employee $employee_id in Project $project_id :: $project_nr <br />"

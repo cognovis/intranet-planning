@@ -181,3 +181,37 @@ namespace eval planning_item {
     }
 
 }
+
+# ---------------------------------------------------------------------
+# Project Assignment Remove
+# ---------------------------------------------------------------------
+ad_proc -public im_project_assignment_remove { 
+} { 
+    Remove users from a project which are not planned on that project anymore
+} {
+    # Get the list of planned projects
+    set planned_project_ids [db_list planned_projects "select distinct item_project_phase_id from im_planning_items"]
+    
+    # For each of the project find the planned members
+    foreach planned_project_id $planned_project_ids {
+        set item_project_member_ids [db_list members "select item_project_member_id
+            from im_planning_items 
+            where item_project_phase_id = :planned_project_id AND
+            (to_char(item_date,'YYMM') = to_char(now(),'YYMM') OR
+             to_char(item_date,'YYMM') = to_char(now() - interval '1 month','YYMM'))"]
+        
+        # Go through the list of project relationships and remove members which are no longer assigned to this project
+        set member_ids [db_list select_rel "select object_id_two from acs_rels, parties where object_id_one = :planned_project_id and object_id_two = party_id "]
+        
+        foreach member_id $member_ids {
+            if {[lsearch $item_project_member_ids $member_id]<0} {
+                # Remove the member
+                im_exec_dml delete_user "user_group_member_del ($planned_project_id, $member_id)"
+                callback im_biz_object_member_after_delete -object_type "im_project" -object_id $planned_project_id -user_id $member_id
+                ns_log Debug "Deleted [im_name_from_user_id $member_id] from [im_name_from_id $planned_project_id]"
+                ds_comment "Deleted [im_name_from_user_id $member_id] from [im_name_from_id $planned_project_id]"
+            }
+        }
+
+    }
+}
